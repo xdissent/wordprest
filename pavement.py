@@ -6,7 +6,7 @@ from paver.easy import *
 
 def get_version():
     version_re = re.compile('^Version:\s(.*)$', re.M)
-    version = version_re.search(path('src/style.css').text())
+    version = version_re.search(path('src/rest.php').text())
     return version.group(1)
 
 def copytree_ignore(directory, files):
@@ -163,16 +163,10 @@ def release(options):
     src_root = path('src')
     build_dir.rmtree()
     build_dir.mkdir()
-    package_dir = build_dir / 'presseo'
+    package_dir = build_dir / 'wp-rest'
     src_root.copytree(package_dir, 
                       ignore=ignore_patterns('.gitignore', '*.less', 'vendor'))
-    vendor_root = package_dir / 'vendor'
-    vendor_root.mkdir()
-    phorms_root = path('vendor/phorms')
-    phorms_root.copytree(vendor_root / 'phorms',
-                         ignore=ignore_patterns('.git', 'build_doc.sh', 
-                                                'changelog', 'doc', 'examples'))
-    archive_file = path('PresSEO-%s.zip' % version)
+    archive_file = path('WP_reSt-%s.zip' % version)
     archive = ZipFile(archive_file, 'w')
     for filename in package_dir.walk():
         if not path(filename).isdir():
