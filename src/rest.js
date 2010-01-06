@@ -145,7 +145,10 @@ jQuery(document).ready(function($){
     }
     
     rest_src.change(function() {
-        var url = '/xdissent/wprst/wp-content/plugins/rest/rest.php?action=render';
+        /**
+         * @todo Calculate this path correctly.
+         */
+        var url = '/~xdissent/wp-rest_dev/wp-content/plugins/wp-rest/rest.php?action=render';
         var src = $(this).val();
         $.post(url, { src: src }, function(data) {
             html_editor.val(data);

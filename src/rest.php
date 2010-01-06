@@ -148,7 +148,7 @@ class ReStPlugin
      */
     public static function installScripts()
     {
-        wp_enqueue_script(__CLASS__, '/wp-content/plugins/rest/rest.js', array('editor'));
+        wp_enqueue_script(__CLASS__, '/wp-content/plugins/wp-rest/rest.js', array('editor'));
     }
     
     /**
@@ -160,7 +160,7 @@ class ReStPlugin
      */
     public static function installStyles()
     {
-        wp_enqueue_style(__CLASS__, '/wp-content/plugins/rest/rest.css', null, null, 'all');
+        wp_enqueue_style(__CLASS__, '/wp-content/plugins/wp-rest/rest.css', null, null, 'all');
     }
 
     /**
