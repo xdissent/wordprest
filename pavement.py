@@ -146,24 +146,12 @@ def develop(options):
     wp_conf_out.write_text(wp_conf)
     
     # Link plugin into WordPress.
-    plugin_root = html_root / 'wp-content/plugins'
+    plugin_root = html_root / 'wp-content/plugins/wp-rest'
     info('Linking plugin source into WordPress at %s' % plugin_root)
     src_root = path('src').expand().abspath()
-    src_root.symlink(theme_root)
-    vendor_root.symlink(theme_root / 'vendor')
+    src_root.symlink(plugin_root)
     info('Launching development site: %s' % options.url_root)
     sh('open %s' % options.url_root)
-
-#     # Link PresSEO into WordPress.
-#     theme_root = html_root / 'wp-content/themes/presseo'
-#     info('Linking PresSEO theme source into WordPress at %s' % theme_root)
-#     src_root = path('src').expand().abspath()
-#     vendor_root = path('vendor').expand().abspath()
-#     src_root.symlink(theme_root)
-#     vendor_root.symlink(theme_root / 'vendor')
-#     info('Launching development site: %s' % options.url_root)
-#     sh('open %s' % options.url_root)
-
 
 @task
 def release(options):
