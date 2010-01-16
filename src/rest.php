@@ -69,6 +69,14 @@ class ReStPlugin
         );
         
         /**
+         * Add the ajax POST handler for the admin.
+         */
+        add_action(
+            'wp_ajax_rest_update',
+            array(__CLASS__, 'updatePost')
+        );
+        
+        /**
          * Add some custom mime types to the WordPress media upload whitelist.
          */
         add_filter('upload_mimes', array(__CLASS__, 'whitelistMediaTypes'));
@@ -375,7 +383,7 @@ class ReStPlugin
         /**
          * Create a reSt-specific toolbar.
          */
-        $prefix = '<div id="resttags">reStructuredText</div>';
+        $prefix = '<div id="resttags"></div>';
         
         /**
          * Get the current reSt source for this Page/Post.
@@ -431,6 +439,31 @@ class ReStPlugin
         $content = str_replace('%', '%%', $content);
 
         return $content;
+    }
+    
+    public static function updatePost()
+    {
+        $data = $_POST;
+
+        if (array_key_exists('src', $data)) {
+            $source = $data['src'];
+        } else {
+            return;
+        }
+        
+        if (array_key_exists('post_id', $data)) {
+            $post_id = $data['post_id'];
+        } else {
+            return;
+        }
+        
+        /**
+         * Set the current reSt source for this Page/Post.
+         */
+        update_post_meta($post_id, 'rest_src', $source);
+        
+        echo self::render($data);
+        die();
     }
     
     /**
@@ -502,38 +535,10 @@ class ReStPlugin
         proc_close($proc);
         
         $rest = preg_replace('/(.*)<\/div>\n<\/body>.*/ms', '$1', $rest);
-        $rest = preg_replace('/.*<body>\n<div class="document">\n\n(.*)/ms', '$1', $rest);
+        $rest = preg_replace('/.*<body>\n<div class="document">[\n\s]+(.*)/ms', '$1', $rest);
         $rest = str_replace('<!-- more -->', '<!--more-->', $rest);
         
-        @header('Content-Type: text/html; charset=' . get_option('blog_charset'));
-        
-        echo $rest;
-    }
-
-    /**
-     * Processes actions handled by direct script access.
-     *
-     * @return null
-     * @throws Exception
-     */    
-    public static function main()
-    {
-        if (!array_key_exists('action', $_GET)) {
-            throw new Exception('No action.');
-        }
-        
-        switch ($_GET['action']) {
-            case 'render':
-                self::render($_POST);
-                break;
-                
-            case 'test':
-                self::testForm();
-                break;
-                
-            default:
-                throw new Exception('Unknown action.');
-        }
+        return $rest;
     }
     
     /**
@@ -552,31 +557,4 @@ class ReStPlugin
         echo '</form>';
     }
 }
-
-/**
- * Check to see if the script was directly accessed.
- */
-if (!count(debug_backtrace())) {
-    /**
-     * Load WordPress environment.
-     *
-     * <caution>This must be done in a global scope.</caution>
-     */
-    $wp_root = preg_replace('/(.*)wp-content.*/', '$1', $_SERVER['SCRIPT_FILENAME']);
-    require_once $wp_root . 'wp-blog-header.php';
-    
-    /**
-     * Initialize the reSt plugin.
-     */
-    ReStPlugin::init();
-    
-    /**
-     * Process actions.
-     */
-    ReStPlugin::main();
-} else {
-    /**
-     * Initialize the reSt plugin.
-     */
-    ReStPlugin::init();
-}
+ReStPlugin::init();

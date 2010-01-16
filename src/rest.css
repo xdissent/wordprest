@@ -59,6 +59,7 @@
 	background-repeat: repeat-x;
 }
 
+
 /**
  * From colors-fresh
  */
@@ -89,4 +90,17 @@
 #resttags {
     border-color: #dfdfdf;
 	background-color: #dfdfdf;
+}
+
+#resttags #rest_tools {
+    padding:2px 4px 0;
+}
+
+#resttags #rest_tools input {
+    display:inline-block;
+    font-size:12px;
+    line-height:18px;
+    margin:3px 1px 4px;
+    min-width:26px;
+    padding:2px 4px;
 }

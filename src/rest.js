@@ -10,6 +10,7 @@ jQuery(document).ready(function($){
     var quick_tags = $('#quicktags');
     var html_editor = $('#content');
     var editor_container = $('#editorcontainer');
+    var update_rest;
     
     /**
      * Store the original editor switching method.
@@ -132,6 +133,36 @@ jQuery(document).ready(function($){
         return false;
     }
     
+    
+    /**
+     * Saves reSt source to database for post. Generates new HTML
+     * from reSt and updates the HTML editor. Then it autosaves.
+     */
+    update_rest = function() {
+        /**
+         * @todo Calculate this path correctly.
+         */
+        var src = rest_src.val();
+        var post_id = $('#post_ID').val();
+
+        autosave_disable_buttons();
+        
+        $.post(
+            ajaxurl, 
+            { 
+                action: 'rest_update',
+                post_id: post_id, 
+                src: src 
+            }, 
+            function(data) {
+                html_editor.val(data);
+                autosave_enable_buttons();
+                delayed_autosave();
+            }
+        );
+    }    
+
+
     /**
      * Remove active tag from other tabs, which is hard to do in PHP.
      */
@@ -145,21 +176,49 @@ jQuery(document).ready(function($){
     }
     
     rest_src.change(function() {
-        /**
-         * @todo Calculate this path correctly.
-         */
-        var url = '/~xdissent/wp-rest_dev/wp-content/plugins/wp-rest/rest.php?action=render';
-        var src = $(this).val();
-        $.post(url, { src: src }, function(data) {
-            html_editor.val(data);
-            /**
-             * Update meta.
-             */
-            $('#the-list input[value=rest_src]').each(function() {
-                meta = $(this).attr('id').replace('[key]', '');
-                $(this).closest('tr').find('textarea').val(src);
-                $(this).next('div.submit').find('input[class^=add]').click();
-            });
-        }, 'html');
+    
+        // Force WordPress to autosave if this post has no id.
+        if ($('#post_ID').val() < 0) {
+        
+            // Fake out autosave to think we've edited.
+            html_editor.val(html_editor.val() + ' ');
+            
+            // Intercept the call to autosave_update_post_ID on success.
+            var old_autosave_update_post_ID = autosave_update_post_ID;
+            autosave_update_post_ID = function(post_ID) {
+                old_autosave_update_post_ID(post_ID);
+                update_rest();
+                autosave_update_post_ID = old_autosave_update_post_ID;
+            }
+            
+            // Call a delayed autosave.
+            delayed_autosave();         
+            return;
+        }
+        
+        update_rest();
     });
+    
+    var rest_tools = $('<div />').attr({ id: 'rest_tools' }).css({ float: 'left' }).appendTo(rest_tags);
+    
+    var tool_factory = function(name, container, click) {
+        $('<input />').attr({
+            id: 'rest_' + name,
+            type: 'button'
+        }).val(name).click(click).appendTo(container);
+    }
+    
+    tool_factory('emphasis', rest_tools, function() {});
+    tool_factory('strong', rest_tools, function() {});
+    tool_factory('literal', rest_tools, function() {});
+    tool_factory('link', rest_tools, function() {});
+    tool_factory('image', rest_tools, function() {});
+    tool_factory('more', rest_tools, function() {});
+        
+    var rest_controls = $('<div />').attr({ id: 'rest_tools' }).css({ float: 'right' }).appendTo(rest_tags);
+
+    tool_factory('load', rest_controls, function() {});    
+    var rest_auto_update = $('<input type="checkbox" /><label>auto-update</label>').appendTo(rest_controls);
+    
+    rest_tags.append($('<div />').css({ clear: 'both' }));
 });
