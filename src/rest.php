@@ -8,9 +8,9 @@ Author: Greg Thornton
 Author URI: http://xdissent.com
 */
 
-error_reporting(E_ALL);
+#error_reporting(E_ALL);
 
-define('SCRIPT_DEBUG', true);
+#define('SCRIPT_DEBUG', true);
 
 class ReStPlugin 
 {
@@ -53,6 +53,22 @@ class ReStPlugin
         );
         
         /**
+         * Add the reSt interface to the "Edit Post" page editor.
+         */
+        add_action(
+            'load-page.php',
+            array(__CLASS__, 'hijackEditor')
+        );
+        
+        /**
+         * Add the reSt interface to the "New Post" page editor.
+         */
+        add_action(
+            'load-page-new.php',
+            array(__CLASS__, 'hijackEditor')
+        );
+        
+        /**
          * Add some custom mime types to the WordPress media upload whitelist.
          */
         add_filter('upload_mimes', array(__CLASS__, 'whitelistMediaTypes'));
@@ -85,6 +101,10 @@ class ReStPlugin
             'edit_form_advanced',
             array(__CLASS__, 'addRestEditor')
         );
+        add_action(
+            'edit_page_form',
+            array(__CLASS__, 'addRestEditor')
+        );
         
         /**
          * Install the required scripts for the "New Post" page.
@@ -103,6 +123,22 @@ class ReStPlugin
         );
         
         /**
+         * Install the required scripts for the "New Page" page.
+         */
+        add_action(
+            'admin_print_scripts-page-new.php', 
+            array(__CLASS__, 'installScripts')
+        );
+        
+        /**
+         * Install the required scripts for the "Edit Page" page.
+         */
+        add_action(
+            'admin_print_scripts-page.php', 
+            array(__CLASS__, 'installScripts')
+        );
+        
+        /**
          * Install the required styles for the "New Post" page.
          */
         add_action(
@@ -115,6 +151,22 @@ class ReStPlugin
          */
         add_action(
             'admin_print_styles-post.php', 
+            array(__CLASS__, 'installStyles')
+        );
+        
+        /**
+         * Install the required styles for the "New Page" page.
+         */
+        add_action(
+            'admin_print_styles-page-new.php', 
+            array(__CLASS__, 'installStyles')
+        );
+        
+        /**
+         * Install the required styles for the "Edit Page" page.
+         */
+        add_action(
+            'admin_print_styles-page.php', 
             array(__CLASS__, 'installStyles')
         );
         
@@ -293,7 +345,7 @@ class ReStPlugin
     public static function filterEditor($editor)
     {   
         global $post;
-        trigger_error(print_r($post, true));
+
         
         if (wp_default_editor() === 'rest') {
         
@@ -329,6 +381,11 @@ class ReStPlugin
          * Get the current reSt source for this Page/Post.
          */
         $rest_src = get_post_meta($post->ID, 'rest_src', true);
+        
+        /**
+         * Escape printf chars.
+         */
+        $rest_src = str_replace('%', '%%', $rest_src);
         
         /**
          * Create a textarea to hold the reSt source.
@@ -370,6 +427,8 @@ class ReStPlugin
          * Call the default WordPress HTML editor content filter.
          */
         $content = call_user_func('wp_htmledit_pre', $content);
+        
+        $content = str_replace('%', '%%', $content);
 
         return $content;
     }
@@ -386,7 +445,8 @@ class ReStPlugin
     public static function render($data)
     {
         // Set this to the prefix of your docutils installation.
-        $prefix = "/Users/xdissent/.virtualenvs/wprst";
+        $prefix = "/nfs/c01/h07/mnt/36218/containers/django/mt_virtualenvs/wp-rest";
+        //$prefix = "/Users/xdissent/.virtualenvs/Coda";
         
         // Set this to the path of rst2html.py
         $rst2html = "$prefix/bin/rst2html.py";
@@ -400,6 +460,10 @@ class ReStPlugin
             $source = file_get_contents($data['file']);
         } else {
             return;
+        }
+        
+        if (get_magic_quotes_gpc()) {
+            $source = stripslashes($source);
         }
         
         $rst2html_options = ''
@@ -437,7 +501,9 @@ class ReStPlugin
         
         proc_close($proc);
         
-        $rest = preg_replace('/.*<body>\n+(.*)<\/body>.*/ms', '$1', $rest);
+        $rest = preg_replace('/(.*)<\/div>\n<\/body>.*/ms', '$1', $rest);
+        $rest = preg_replace('/.*<body>\n<div class="document">\n\n(.*)/ms', '$1', $rest);
+        $rest = str_replace('<!-- more -->', '<!--more-->', $rest);
         
         @header('Content-Type: text/html; charset=' . get_option('blog_charset'));
         
