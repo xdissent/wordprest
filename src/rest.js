@@ -193,12 +193,30 @@ jQuery(document).ready(function($){
      * from reSt and updates the HTML editor. Then it autosaves.
      */
     update_rest = function() {
-        /**
-         * @todo Calculate this path correctly.
-         */
+    
+        // Force WordPress to autosave if this post has no id.
+        if ($('#post_ID').val() < 0) {
+        
+            // Fake out autosave to think we've edited.
+            html_editor.val(html_editor.val() + ' ');
+            
+            // Intercept the call to autosave_update_post_ID on success.
+            var old_autosave_update_post_ID = autosave_update_post_ID;
+            autosave_update_post_ID = function(post_ID) {
+                old_autosave_update_post_ID(post_ID);
+                update_rest();
+                autosave_update_post_ID = old_autosave_update_post_ID;
+            }
+            
+            // Call a delayed autosave.
+            delayed_autosave();         
+            return;
+        }
+
         var src = rest_src.val();
         var post_id = $('#post_ID').val();
 
+        $('#rest-tool-update-HTML').attr({ disabled: 'disabled' });
         autosave_disable_buttons();
         
         $.post(
@@ -218,6 +236,7 @@ jQuery(document).ready(function($){
                 }
                 html_editor.val(data);
                 autosave_enable_buttons();
+                $('#rest-tool-update-HTML').removeAttr('disabled');
                 delayed_autosave();
             }
         );
@@ -244,8 +263,9 @@ jQuery(document).ready(function($){
     var rest_tools = $('<div />').attr({ id: 'rest-tools' }).appendTo(rest_toolbar);
     
     var tool_factory = function(name, container, click) {
+        var id = name.replace(/\s+/g, '-');
         $('<input />').attr({
-            id: 'rest-tool-' + name,
+            id: 'rest-tool-' + id,
             type: 'button'
         }).val(name).click(click).appendTo(container);
     }
@@ -269,47 +289,32 @@ jQuery(document).ready(function($){
     
     tool_factory('more', rest_tools, function() {
         rest_src.insertAtCaret("\n.. more\n");
+        console.log('more');
     });
     
 
         
-/*
     var rest_controls = $('<div />').attr({ id: 'rest-controls' }).appendTo(rest_tools);
 
-    tool_factory('update HTML', rest_controls, function() {});    
-    var rest_auto_update = $('<input type="checkbox" /><label>auto-update</label>').appendTo(rest_controls);
+    tool_factory('update HTML', rest_controls, function() {
+        $(this).attr({ disabled: 'disabled'});
+        update_rest();
+    });
     
-*/
+    var rest_auto_update = $('<input type="checkbox" /><label>auto-update</label>').appendTo(rest_controls);
+
     
     /**
      * Enable reSt parsing.
      */
     if (rest_src.length) {
-        rest_src.change(function() {
-        
-            // Force WordPress to autosave if this post has no id.
-            if ($('#post_ID').val() < 0) {
-            
-                // Fake out autosave to think we've edited.
-                html_editor.val(html_editor.val() + ' ');
-                
-                // Intercept the call to autosave_update_post_ID on success.
-                var old_autosave_update_post_ID = autosave_update_post_ID;
-                autosave_update_post_ID = function(post_ID) {
-                    old_autosave_update_post_ID(post_ID);
-                    update_rest();
-                    autosave_update_post_ID = old_autosave_update_post_ID;
-                }
-                
-                // Call a delayed autosave.
-                delayed_autosave();         
-                return;
+        rest_src.change(function () {
+            if (rest_auto_update.attr('checked')) {
+                update_rest();
             }
-            
-            update_rest();
         });
-
     } else {
-        $('input' ,rest_toolbar).attr({ disabled: "disabled" });
+        $('input', rest_toolbar).attr({ disabled: 'disabled' });
     }
+
 });

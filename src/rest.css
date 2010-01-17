@@ -31,6 +31,7 @@
 
 #rest-tools {
     padding:2px 4px 0;
+    position: relative;
 }
 
 #rest-tools input {
@@ -40,6 +41,18 @@
     margin:3px 1px 4px;
     min-width:26px;
     padding:2px 4px;
+}
+
+#rest-tools input[disabled], #rest-tools input[disabled]:hover {
+	color: #aaa !important;
+	border-color: #ddd !important;
+}
+
+#rest-controls {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 2px 4px;
 }
 
 #rest-container {
@@ -73,6 +86,7 @@
     font-weight: bold;
 }
 
+/* This ignorant selector is needed to override crappy WP defaults */
 #rest-toolbar #rest-tools #rest-tool-literal {
     font-family: monospace;
     padding-top: 4px;
