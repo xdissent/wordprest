@@ -16,11 +16,11 @@ def copytree_ignore(directory, files):
 options(
     develop=Bunch(
         wp_version='latest',
-        html_root='~/Sites/wp-rest_dev',
-        url_root='http://%s/~%s/wp-rest_dev' % 
+        html_root='~/Sites/wordprest_dev',
+        url_root='http://%s/~%s/wordprest_dev' % 
             (gethostname(), os.environ.get('USER')),
         no_create_db=False,
-        db_name='wp_rest_dev',
+        db_name='wordprest_dev',
         db_user='root',
         db_password='',
         db_host='localhost'
@@ -48,7 +48,7 @@ def build_docs(options):
 @task
 @cmdopts([
     ('wp-version=',  'v', 'WordPress version to install.'),
-    ('html-root=',   'r', 'The development site root path (Default: ~/Sites/wp-rest_dev).'),
+    ('html-root=',   'r', 'The development site root path (Default: ~/Sites/wordprest_dev).'),
     ('url-root=',    'R', 'The development site URL root.'),
     ('no-create-db', 'C', 'Do not create the database (Default: False).'),
     ('db-name=',     'n', 'The name of the database to use.'),
@@ -67,7 +67,7 @@ def develop(options):
     
     The development site will be set up at HTML_ROOT. If the path given is not
     an empty directory, an error will be thrown. HTML_ROOT should exist in a
-    location under your web server document root (ex. "~/Sites/wp-rest_dev/" on
+    location under your web server document root (ex. "~/Sites/wordprest_dev/" on
     a Mac OS X system).
     
     Note: You *MUST* initialize and update the Git submodules before running
@@ -146,7 +146,7 @@ def develop(options):
     wp_conf_out.write_text(wp_conf)
     
     # Link plugin into WordPress.
-    plugin_root = html_root / 'wp-content/plugins/wp-rest'
+    plugin_root = html_root / 'wp-content/plugins/wordprest'
     info('Linking plugin source into WordPress at %s' % plugin_root)
     src_root = path('src').expand().abspath()
     src_root.symlink(plugin_root)
@@ -163,7 +163,7 @@ def release(options):
     src_root = path('src')
     build_dir.rmtree()
     build_dir.mkdir()
-    package_dir = build_dir / 'wp-rest'
+    package_dir = build_dir / 'wordprest'
     src_root.copytree(package_dir, 
                       ignore=ignore_patterns('.gitignore', '*.less', 'vendor'))
     archive_file = path('WordPreSt-%s.zip' % version)

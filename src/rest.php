@@ -40,7 +40,7 @@ class ReStPlugin
         /**
          * Activate plugin.
          */
-        add_action('activate_wp-rest/rest.php', array(__CLASS__, 'activatePlugin'));
+        add_action('activate_wordprest/rest.php', array(__CLASS__, 'activatePlugin'));
         
         /**
          * Add the reSt interface to the "Edit Post" page editor.
@@ -254,7 +254,7 @@ class ReStPlugin
     {
         wp_enqueue_script(
             __CLASS__, 
-            '/wp-content/plugins/wp-rest/rest.js', 
+            '/wp-content/plugins/wordprest/rest.js', 
             array('editor')
         );
     }
@@ -270,7 +270,7 @@ class ReStPlugin
     {   
         wp_enqueue_style(
             __CLASS__,
-            '/wp-content/plugins/wp-rest/rest.css',
+            '/wp-content/plugins/wordprest/rest.css',
             null, 
             null, 
             'all'
@@ -284,7 +284,7 @@ class ReStPlugin
         
         wp_enqueue_style(
             __CLASS__ . '-' . $color,
-            '/wp-content/plugins/wp-rest/rest-' . $color . '.css',
+            '/wp-content/plugins/wordprest/rest-' . $color . '.css',
             null, 
             null, 
             'all'
