@@ -155,6 +155,13 @@ jQuery(document).ready(function($){
                 src: src 
             }, 
             function(data) {
+                var tmp = $('<div>' + data + '</div>');
+                var title = $('.title', tmp);
+                if (title.length) {
+                    title.remove();
+                    $('#title').val(title.html());
+                    data = tmp.html();
+                }
                 html_editor.val(data);
                 autosave_enable_buttons();
                 delayed_autosave();
@@ -175,29 +182,31 @@ jQuery(document).ready(function($){
         rest_src.parent().hide();
     }
     
-    rest_src.change(function() {
-    
-        // Force WordPress to autosave if this post has no id.
-        if ($('#post_ID').val() < 0) {
+    if (rest_src.length) {
+        rest_src.change(function() {
         
-            // Fake out autosave to think we've edited.
-            html_editor.val(html_editor.val() + ' ');
+            // Force WordPress to autosave if this post has no id.
+            if ($('#post_ID').val() < 0) {
             
-            // Intercept the call to autosave_update_post_ID on success.
-            var old_autosave_update_post_ID = autosave_update_post_ID;
-            autosave_update_post_ID = function(post_ID) {
-                old_autosave_update_post_ID(post_ID);
-                update_rest();
-                autosave_update_post_ID = old_autosave_update_post_ID;
+                // Fake out autosave to think we've edited.
+                html_editor.val(html_editor.val() + ' ');
+                
+                // Intercept the call to autosave_update_post_ID on success.
+                var old_autosave_update_post_ID = autosave_update_post_ID;
+                autosave_update_post_ID = function(post_ID) {
+                    old_autosave_update_post_ID(post_ID);
+                    update_rest();
+                    autosave_update_post_ID = old_autosave_update_post_ID;
+                }
+                
+                // Call a delayed autosave.
+                delayed_autosave();         
+                return;
             }
             
-            // Call a delayed autosave.
-            delayed_autosave();         
-            return;
-        }
-        
-        update_rest();
-    });
+            update_rest();
+        });
+    }
     
     var rest_tools = $('<div />').attr({ id: 'rest_tools' }).css({ float: 'left' }).appendTo(rest_tags);
     

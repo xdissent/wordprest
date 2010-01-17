@@ -8,10 +8,9 @@ Author: Greg Thornton
 Author URI: http://xdissent.com
 */
 
-#error_reporting(E_ALL);
-
-#define('SCRIPT_DEBUG', true);
-
+/**
+ * The reStructuredText Plugin.
+ */
 class ReStPlugin 
 {
     /**
@@ -39,47 +38,47 @@ class ReStPlugin
         /**
          * Add the reSt interface to the "Edit Post" page editor.
          */
-        add_action(
-            'load-post.php',
-            array(__CLASS__, 'hijackEditor')
-        );
+        add_action('load-post.php', array(__CLASS__, 'hijackEditor'));
         
         /**
          * Add the reSt interface to the "New Post" page editor.
          */
-        add_action(
-            'load-post-new.php',
-            array(__CLASS__, 'hijackEditor')
-        );
+        add_action('load-post-new.php', array(__CLASS__, 'hijackEditor'));
         
         /**
          * Add the reSt interface to the "Edit Post" page editor.
          */
-        add_action(
-            'load-page.php',
-            array(__CLASS__, 'hijackEditor')
-        );
+        add_action('load-page.php', array(__CLASS__, 'hijackEditor'));
         
         /**
          * Add the reSt interface to the "New Post" page editor.
          */
-        add_action(
-            'load-page-new.php',
-            array(__CLASS__, 'hijackEditor')
-        );
+        add_action('load-page-new.php', array(__CLASS__, 'hijackEditor'));
         
         /**
          * Add the ajax POST handler for the admin.
          */
-        add_action(
-            'wp_ajax_rest_update',
-            array(__CLASS__, 'updatePost')
-        );
+        add_action('wp_ajax_rest_update', array(__CLASS__, 'updatePost'));
         
         /**
          * Add some custom mime types to the WordPress media upload whitelist.
          */
         add_filter('upload_mimes', array(__CLASS__, 'whitelistMediaTypes'));
+        
+        /**
+         * Add the options page.
+         */
+        add_action('admin_menu', array(__CLASS__, 'addSettingsMenu'));
+        
+        /**
+         * Register the plugin options.
+         */
+        add_action('admin_init', array(__CLASS__, 'registerSettings'));
+        
+        /**
+         * Intercept requests for reSt source.
+         */
+        add_action('template_redirect', array(__CLASS__, 'viewSource'));
     }
 
     /**
@@ -97,22 +96,13 @@ class ReStPlugin
         /**
          * Install the action to start a output buffer for hacking the editor.
          */
-        add_action(
-            'post_submitbox_start',
-            array(__CLASS__, 'installBuffer')
-        );
+        add_action('post_submitbox_start', array(__CLASS__, 'installBuffer'));
         
         /**
          * Install the action to hack the form and kill the output buffer.
          */
-        add_action(
-            'edit_form_advanced',
-            array(__CLASS__, 'addRestEditor')
-        );
-        add_action(
-            'edit_page_form',
-            array(__CLASS__, 'addRestEditor')
-        );
+        add_action('edit_form_advanced', array(__CLASS__, 'addRestEditor'));
+        add_action('edit_page_form', array(__CLASS__, 'addRestEditor'));
         
         /**
          * Install the required scripts for the "New Post" page.
@@ -208,7 +198,11 @@ class ReStPlugin
      */
     public static function installScripts()
     {
-        wp_enqueue_script(__CLASS__, '/wp-content/plugins/wp-rest/rest.js', array('editor'));
+        wp_enqueue_script(
+            __CLASS__, 
+            '/wp-content/plugins/wp-rest/rest.js', 
+            array('editor')
+        );
     }
     
     /**
@@ -220,7 +214,13 @@ class ReStPlugin
      */
     public static function installStyles()
     {
-        wp_enqueue_style(__CLASS__, '/wp-content/plugins/wp-rest/rest.css', null, null, 'all');
+        wp_enqueue_style(
+            __CLASS__,
+            '/wp-content/plugins/wp-rest/rest.css',
+            null, 
+            null, 
+            'all'
+        );
     }
 
     /**
@@ -354,7 +354,6 @@ class ReStPlugin
     {   
         global $post;
 
-        
         if (wp_default_editor() === 'rest') {
         
             /**
@@ -372,12 +371,16 @@ class ReStPlugin
              * </note>
              */
             remove_filter('the_editor_content', 'wp_htmledit_pre');
-    		remove_filter('the_editor_content', 'wp_richedit_pre');
-    		
-    		/**
-    		 * Add the reSt editor content filter.
-    		 */
-            add_filter('the_editor_content', array(__CLASS__, 'filterEditorContent'));
+            remove_filter('the_editor_content', 'wp_richedit_pre');
+            
+            /**
+             * Add the reSt editor content filter.
+             */
+            add_filter(
+                'the_editor_content',
+                array(__CLASS__, 
+                'filterEditorContent')
+            );
         }
         
         /**
@@ -388,20 +391,44 @@ class ReStPlugin
         /**
          * Get the current reSt source for this Page/Post.
          */
-        $rest_src = get_post_meta($post->ID, 'rest_src', true);
+        if ($post->ID) {
+            $rest_src = get_post_meta($post->ID, 'rest_src', true);
+        }
         
         /**
          * Escape printf chars.
          */
         $rest_src = str_replace('%', '%%', $rest_src);
         
+
         /**
-         * Create a textarea to hold the reSt source.
+         * Either output a warning or the textarea for reSt source.
          */
-        $suffix = sprintf(
-            '<div id="restsrc"><textarea cols=40 rows=10>%s</textarea></div>',
-            htmlentities($rest_src)
-        );
+        if (!get_option('rst2html_path')) {
+        
+            /**
+             * Display a warning if rst2html.py is not set up.
+             */
+            $suffix = '<div id="rest_no_convertor">';
+            $suffix .= '<p>No HTML convertor found! Please edit your <a href="';
+            $suffix .= admin_url('options-general.php?page=rest-plugin-settings');
+            $suffix .= '">reStructuredText Settings</a>.</p>';
+            $suffix .= '</div>';
+            
+        } else {
+            /**
+             * Create a textarea to hold the reSt source.
+             */
+            $suffix = sprintf(
+                '<textarea cols=40 rows=10>%s</textarea>',
+                htmlentities($rest_src)
+            );
+        }
+        
+        /**
+         * Wrap the textarea or error message in a div.
+         */
+        $suffix = '<div id="restsrc">' . $suffix . '</div>';
         
         /**
          * Always add the prefix and suffix to the editor we're given.
@@ -441,6 +468,11 @@ class ReStPlugin
         return $content;
     }
     
+    /**
+     * Saves the reSt source for a post, and outputs the rendered HTML.
+     *
+     * @return null
+     */
     public static function updatePost()
     {
         $data = $_POST;
@@ -463,7 +495,7 @@ class ReStPlugin
         update_post_meta($post_id, 'rest_src', $source);
         
         echo self::render($data);
-        die();
+        exit;
     }
     
     /**
@@ -476,13 +508,14 @@ class ReStPlugin
      * @todo Detect and return errors. Convert to JSON response.
      */
     public static function render($data)
-    {
-        // Set this to the prefix of your docutils installation.
-        $prefix = "/nfs/c01/h07/mnt/36218/containers/django/mt_virtualenvs/wp-rest";
-        //$prefix = "/Users/xdissent/.virtualenvs/Coda";
+    {  
+        // Get the rst2html path.
+        $rst2html = get_option('rst2html_path', false);
         
-        // Set this to the path of rst2html.py
-        $rst2html = "$prefix/bin/rst2html.py";
+        // Bail if we can't find the convertor.
+        if (!get_option('rst2html_path')) {
+            return;
+        }
         
         /**
          * Find source.
@@ -495,26 +528,79 @@ class ReStPlugin
             return;
         }
         
+        /**
+         * Strip slashes if appropriate.
+         */
         if (get_magic_quotes_gpc()) {
             $source = stripslashes($source);
         }
         
-        $rst2html_options = ''
-            . '--no-toc-backlinks '
-            . '--no-doc-title '
-            . '--no-generator '
-            . '--no-source-link '
-            . '--no-footnote-backlinks '
-            . '--initial-header-level=2 ';
+        /**
+         * Get the convertor options.
+         */
+        $rst2html_options = get_option('rst2html_options');
+        
+        /**
+         * Don't embed the stylesheet to save some processing time.
+         */
+        $rst2html .= ' --link-stylesheet';
+        
+        /**
+         * Special handling for toc-backlinks option.
+         */
+        if (array_key_exists('toc-backlinks', $rst2html_options)) {
+            $toc_links = $rst2html_options['toc-backlinks'];
+            unset($rst2html_options['toc-backlinks']);
             
+            if ($toc_links == 'entry') {
+                $rst2html .= ' --toc-entry-backlinks';
+            } elseif ($toc_links == 'top') {
+                $rst2html .= ' --toc-top-backlinks';
+            } elseif ($toc_links == 'disable') {
+                $rst2html .= ' --no-toc-backlinks';
+            }
+        }
+        
+        /**
+         * Special handling for doc-title option.
+         */
+        if (array_key_exists('doc-title', $rst2html_options)) {
+            if ($rst2html_options['doc-title'] == 'enable') {
+                unset($rst2html_options['doc-title']);
+            }
+        }
+        
+        /**
+         * Special handling for source-link option.
+         */
+        if (array_key_exists('source-link', $rst2html_options)) {
+            if ($rst2html_options['source-link'] == 'enable') {
+                $rst2html .= ' --source-url=\?source\=rest';
+            }
+        }
+        
+        /**
+         * Handle all normal options.
+         */
+        foreach ($rst2html_options as $opt => $val) {
+            if ($val == 'enable') {
+                $rst2html .= ' --' . $opt;
+            } elseif ($val == 'disable') {
+                $rst2html .= ' --no-' . $opt;
+            } elseif ($val) {
+                $rst2html .= ' --' . $opt . '=' . $val;
+            }
+        }
+        
+        error_reporting(E_ALL);
+        trigger_error('rst2html: ' . $rst2html);
+
         $desc = array(
             0 => array('pipe', 'r'),
             1 => array('pipe', 'w')
         );
         
-        $exec = $rst2html . ' ' . $rst2html_options;
-        
-        $proc = proc_open($exec, $desc, $pipes);
+        $proc = proc_open($rst2html, $desc, $pipes);
         
         if (!is_resource($proc)) {
             throw new Exception('Error opening process.');
@@ -534,27 +620,180 @@ class ReStPlugin
         
         proc_close($proc);
         
-        $rest = preg_replace('/(.*)<\/div>\n<\/body>.*/ms', '$1', $rest);
-        $rest = preg_replace('/.*<body>\n<div class="document">[\n\s]+(.*)/ms', '$1', $rest);
+        $rest = preg_replace('/(.*)<\/body>.*/ms', '$1', $rest);
+        $rest = preg_replace('/.*<body>[\n\s]+(.*)/ms', '$1', $rest);
         $rest = str_replace('<!-- more -->', '<!--more-->', $rest);
         
         return $rest;
     }
     
+    
     /**
-     * Outputs an HTML form ready for testing reSt rendering.
+     * Adds the reSt settings page to the settings admin menu.
      *
      * @return null
      */
-    public static function testForm()
+    public static function addSettingsMenu()
     {
-        /**
-         * Set the header to the appropriate content type and charset.
-         */
-        @header('Content-Type: text/html; charset=' . get_option('blog_charset'));
-        echo '<form action="?action=render" method="post">';
-        echo '<textarea name="src"></textarea><input type="submit" />';
-        echo '</form>';
+        add_options_page(
+            'reStructuredText Plugin Settings',
+            'reSt Plugin Settings',
+            'administrator',
+            'rest-plugin-settings',
+            array(__CLASS__, 'settingsPage')
+        );
+    }
+
+    
+    /**
+     * Renders the reSt options page.
+     *
+     * @return null
+     */
+    public static function settingsPage()
+    {
+        $available_rst2html_options = array(
+            'doc-title' => 'Promote the main section title to document title (will replace current title).',
+            'generator' => 'Add "Generated by Docutils" text and link.',
+            'source-link' => 'Add "View document source" link.',
+            'footnote-backlinks' => 'Generate links from footnotes back to the reference.'
+        );
+        
+        $rst2html_header_levels = array(1, 2, 3, 4);
+        
+        $rst2html_options = get_option('rst2html_options', array());
+    
+        ?>
+        
+        <div class="wrap">
+            <h2>reStructuredText Plugin Settings</h2>
+            
+            <form method="post" action="options.php">
+            <?php settings_fields('rest-settings-group'); ?>
+            <table class="form-table">
+                <tr valign="top">
+                    <th scope="row">HTML Convertor Path</th>
+                    <td>
+                        <input type="text" name="rst2html_path" value="<?php echo get_option('rst2html_path'); ?>" />
+                    </td>
+                </tr>
+                <tr valign="top">
+                    <th scope="row">HTML Convertor Options</th>
+                    <td>
+                        <fieldset>
+                            <legend class="screen-reader-text">
+                                <span>reStructuredText settings</span>
+                            </legend>
+
+                            <?php foreach ($available_rst2html_options as $opt => $label) { ?>
+                                <label for="<?php echo $opt ?>">
+                                    <input type="hidden" name="rst2html_options[<?php echo $opt ?>]" value="disable" />
+                                    <input type="checkbox" name="rst2html_options[<?php echo $opt ?>]"
+                                        id="<?php echo $opt ?>" value="enable" 
+                                        <?php if (array_key_exists($opt, $rst2html_options)) {
+                                            if ($rst2html_options[$opt] === 'enable') {
+                                                echo 'checked="checked"';
+                                            }
+                                        } ?> />
+                                    <?php echo $label ?>
+                                </label><br />
+                            <?php } ?>
+                            
+                            <label for="initial-header-level">
+                                Top level section headers should be converted to 
+                                <select id="initial-header-level" name="rst2html_options[initial-header-level]">
+                                    <?php foreach ($rst2html_header_levels as $level) { ?>
+                                        <option value="<?php echo $level ?>"
+                                            <?php if (array_key_exists('initial-header-level', $rst2html_options)) {
+                                                if ($rst2html_options['initial-header-level'] == $level) {
+                                                    echo 'selected="selected"';
+                                                }
+                                            } ?>>H<?php echo $level ?></option>
+                                    <?php } ?>
+                                </select>
+                                HTML tags.<br />
+                            </label><br />
+                            
+                            <label for="toc-backlinks">
+                            
+                                <input type="radio" name="rst2html_options[toc-backlinks]" value="entry" 
+                                    <?php if ($rst2html_options['toc-backlinks'] == 'entry') {
+                                        echo 'checked="checked"';
+                                    } ?>
+                                />
+                                Link from section headers to their table of contents entries.<br />
+                                
+                                <input type="radio" name="rst2html_options[toc-backlinks]" value="top" 
+                                    <?php if ($rst2html_options['toc-backlinks'] == 'top') {
+                                        echo 'checked="checked"';
+                                    } ?>
+                                />
+                                Link from section headers to the top of the table of contents.<br />
+                                
+                                <input type="radio" name="rst2html_options[toc-backlinks]" value="disable" 
+                                    <?php if ($rst2html_options['toc-backlinks'] == 'disable') {
+                                        echo 'checked="checked"';
+                                    } ?>
+                                />
+                                Disable section header links.<br />
+                            </label>
+                            
+                        </fieldset>
+                    </td>
+                </tr>
+            </table>
+            
+            <p class="submit">
+            <input type="submit" class="button-primary" value="Save Changes" />
+            </p>
+            
+            </form>
+        </div>
+
+        <?php
+    }
+    
+    /**
+     * Registers reSt settings with WordPress.
+     *
+     * @return null
+     */
+    public static function registerSettings()
+    {
+        register_setting('rest-settings-group', 'rst2html_path');
+        register_setting('rest-settings-group', 'rst2html_options');
+    }
+    
+    /**
+     * Outputs a post's reSt source if requested or 404 if it doesn't exist.
+     *
+     * @return null
+     */
+    public static function viewSource()
+    {
+        if (array_key_exists('source', $_GET) && $_GET['source'] == 'rest') {
+            global $wp_query;
+            
+            if ($wp_query->post_count != 1) {
+                include(get_404_template());
+                exit;
+            }
+            
+            $rest_src = get_post_meta($wp_query->post->ID, 'rest_src', true);
+            
+            if (!$rest_src) {
+                include(get_404_template());
+                exit;
+            }
+            
+            header('Content-type: text/plain');
+            echo $rest_src;
+            exit;
+        }
     }
 }
+
+/**
+ * Perform class initialization.
+ */
 ReStPlugin::init();
