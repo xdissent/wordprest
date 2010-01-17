@@ -36,6 +36,11 @@ class ReStPlugin
         }
         
         /**
+         * Activate plugin.
+         */
+        register_activation_hook(__FILE__, array(__CLASS__, 'activatePlugin'));
+        
+        /**
          * Add the reSt interface to the "Edit Post" page editor.
          */
         add_action('load-post.php', array(__CLASS__, 'hijackEditor'));
@@ -79,6 +84,53 @@ class ReStPlugin
          * Intercept requests for reSt source.
          */
         add_action('template_redirect', array(__CLASS__, 'viewSource'));
+    }
+    
+    /**
+     * Creates default options when plugin is activated.
+     *
+     * @return null
+     */
+    public static function activatePlugin()
+    {
+        add_option('rst2html_options', array(
+            'initial-header-level' => 2,
+            'toc-backlinks' => 'entry',
+            'doc-title' => 'disable',
+            'generator' => 'disable',
+            'source-link' => 'disable',
+            'footnote-backlinks' => 'disable'
+        ));
+        
+        add_option('rst2html_path', self::findConvertor());
+    }
+    
+    /**
+     * Auto locates the rst2html.py script.
+     *
+     * Returns the path of the located convertor script or false.
+     *
+     * @return mixed
+     */
+    public static function findConvertor()
+    {
+        $search = array(
+            '/bin',
+            '/usr/bin',
+            '/usr/local/bin',
+            dirname(__FILE__)
+        );
+        
+        $found = false;
+        foreach ($search as $path) {
+            $file = $path . '/rst2html.py';
+            if (file_exists($file) && is_executable($file)) {
+                $found = $file;
+                break;
+            }
+        }
+        
+        return $found;
     }
 
     /**
