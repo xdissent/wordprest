@@ -78,6 +78,10 @@
     width:100%;
 }
 
+#rest-container p {
+    padding: 20px;
+}
+
 #rest-tool-emphasis {
     font-style: italic;
 }

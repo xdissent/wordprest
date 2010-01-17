@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: reStructuredText
+Plugin Name: WordPreSt
 Version: 1.0
-Plugin URI: http://xdissent.com
-Description: A reStructuredText interface for WordPress.
+Plugin URI: http://xdissent.com/projects/wprest/
+Description: A reStructuredText editor enhancement for WordPress.
 Author: Greg Thornton
 Author URI: http://xdissent.com
 */
@@ -13,6 +13,8 @@ Author URI: http://xdissent.com
  */
 class ReStPlugin 
 {
+    public static $display_name = 'WordPreSt';
+
     /**
      * Initializes the plugin, registering it the WordPress.
      *
@@ -34,11 +36,11 @@ class ReStPlugin
         if (!function_exists('add_action')) {
             return;
         }
-        
+
         /**
          * Activate plugin.
          */
-        register_activation_hook(__FILE__, array(__CLASS__, 'activatePlugin'));
+        add_action('activate_wp-rest/rest.php', array(__CLASS__, 'activatePlugin'));
         
         /**
          * Add the reSt interface to the "Edit Post" page editor.
@@ -464,7 +466,7 @@ class ReStPlugin
              */
             $contents = '<p>No HTML convertor found! Please edit your <a href="';
             $contents .= admin_url('options-general.php?page=rest-plugin-settings');
-            $contents .= '">reStructuredText Settings</a>.</p>';
+            $contents .= '">' . self::$display_name . ' Settings</a>.</p>';
             
         } else {
             /**
@@ -697,8 +699,8 @@ class ReStPlugin
     public static function addSettingsMenu()
     {
         add_options_page(
-            'reStructuredText Plugin Settings',
-            'reSt Plugin Settings',
+            self::$display_name . ' Settings',
+            self::$display_name . ' Settings',
             'administrator',
             'rest-plugin-settings',
             array(__CLASS__, 'settingsPage')
@@ -727,7 +729,7 @@ class ReStPlugin
         ?>
         
         <div class="wrap">
-            <h2>reStructuredText Plugin Settings</h2>
+            <h2><?php echo self::$display_name ?> Settings</h2>
             
             <form method="post" action="options.php">
             <?php settings_fields('rest-settings-group'); ?>
@@ -736,6 +738,7 @@ class ReStPlugin
                     <th scope="row">HTML Convertor Path</th>
                     <td>
                         <input type="text" name="rst2html_path" value="<?php echo get_option('rst2html_path'); ?>" />
+                        <span class="description">The absolute path to the docutils rst2html.py script.</span>
                     </td>
                 </tr>
                 <tr valign="top">
@@ -743,7 +746,7 @@ class ReStPlugin
                     <td>
                         <fieldset>
                             <legend class="screen-reader-text">
-                                <span>reStructuredText settings</span>
+                                <span><?php echo self::$display_name ?> settings</span>
                             </legend>
 
                             <?php foreach ($available_rst2html_options as $opt => $label) { ?>

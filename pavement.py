@@ -166,7 +166,7 @@ def release(options):
     package_dir = build_dir / 'wp-rest'
     src_root.copytree(package_dir, 
                       ignore=ignore_patterns('.gitignore', '*.less', 'vendor'))
-    archive_file = path('WP_reSt-%s.zip' % version)
+    archive_file = path('WordPreSt-%s.zip' % version)
     archive = ZipFile(archive_file, 'w')
     for filename in package_dir.walk():
         if not path(filename).isdir():
