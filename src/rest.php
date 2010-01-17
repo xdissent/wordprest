@@ -2,11 +2,16 @@
 /*
 Plugin Name: WordPreSt
 Version: 1.0
-Plugin URI: http://xdissent.com/projects/wprest/
+Plugin URI: http://xdissent.com/projects/wordprest/
 Description: A reStructuredText editor enhancement for WordPress.
 Author: Greg Thornton
 Author URI: http://xdissent.com
 */
+
+/**
+ * This file is licensed under the GNU Lesser General Public License.
+ * See license.txt for details.
+ */
 
 /**
  * The reStructuredText Plugin.
