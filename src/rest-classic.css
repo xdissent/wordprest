@@ -1,0 +1,30 @@
+#edButtonREST {
+    background-color:#F2F1EB;
+    border-color:#DFDFDF;
+    color:#999999;
+}
+
+#rest-toolbar {
+    -moz-background-clip:border;
+    -moz-background-inline-policy:continuous;
+    -moz-background-origin:padding;
+    border-color:#DFDFDF;
+    background:#E3EEF7 url(../../../wp-admin/images/ed-bg-vs.gif) repeat-x scroll left top;
+}
+
+#rest-tools input {
+    border-color:#C3C3C3;
+    -moz-background-clip:border;
+    -moz-background-inline-policy:continuous;
+    -moz-background-origin:padding;
+    background:#FFFFFF url(../../../wp-admin/images/fade-butt.png) repeat-x scroll 0 -2px;
+}
+
+#rest-tools input:hover {
+	border-color: #aaa;
+	background: #ddd;
+}
+
+#rest-container {
+    border-color:#DFDFDF;
+}

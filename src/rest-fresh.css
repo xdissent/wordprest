@@ -1,0 +1,29 @@
+#edButtonREST {
+    background-color:#F1F1F1;
+    border-color:#DFDFDF;
+    color:#999999;   
+}
+
+#rest-toolbar {
+    background-color:#DFDFDF;
+    border-color:#DFDFDF;
+}
+
+#rest-tools input {
+    border-color:#C3C3C3;
+    -moz-background-clip:border;
+    -moz-background-inline-policy:continuous;
+    -moz-background-origin:padding;
+    background:#FFFFFF url(../../../wp-admin/images/fade-butt.png) repeat-x scroll 0 -2px;
+}
+
+#rest-tools input:hover {
+	border-color: #aaa;
+	background: #ddd;
+    background:#DDDDDD none repeat scroll 0 0;
+    border-color:#AAAAAA;
+}
+
+#rest-container {
+    border-color:#DFDFDF;
+}

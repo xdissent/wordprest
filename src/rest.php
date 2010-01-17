@@ -213,10 +213,24 @@ class ReStPlugin
      * @todo Determine the style include paths dynamically.
      */
     public static function installStyles()
-    {
+    {   
         wp_enqueue_style(
             __CLASS__,
             '/wp-content/plugins/wp-rest/rest.css',
+            null, 
+            null, 
+            'all'
+        );
+        
+        $user = wp_get_current_user();
+        $color = get_user_option('admin_color', $user->ID);
+        if (!$color) {
+            $color = 'fresh';
+        }
+        
+        wp_enqueue_style(
+            __CLASS__ . '-' . $color,
+            '/wp-content/plugins/wp-rest/rest-' . $color . '.css',
             null, 
             null, 
             'all'
@@ -307,9 +321,9 @@ class ReStPlugin
          * Determine whether to make the rest editor active.
          */
         if (wp_default_editor() === 'rest') {
-            $button = '$0<a id="edButtonREST" class="active hide-if-no-js" onclick="switchEditors.go(\'$1\', \'rest\');">REST</a>';
+            $button = '$0<a id="edButtonREST" class="active hide-if-no-js" onclick="switchEditors.go(\'$1\', \'rest\');">reSt</a>';
         } else {
-            $button = '$0<a id="edButtonREST" class="hide-if-no-js" onclick="switchEditors.go(\'$1\', \'rest\');">REST</a>';
+            $button = '$0<a id="edButtonREST" class="hide-if-no-js" onclick="switchEditors.go(\'$1\', \'rest\');">reSt</a>';
         }
         
         /**
@@ -357,7 +371,7 @@ class ReStPlugin
         if (wp_default_editor() === 'rest') {
         
             /**
-             * Strip the class from the editor.
+             * Strip the class from the editor to prevent auto-TinyMCE
              */
             $editor = str_replace("class='theEditor'", '', $editor);
         
@@ -386,20 +400,7 @@ class ReStPlugin
         /**
          * Create a reSt-specific toolbar.
          */
-        $prefix = '<div id="resttags"></div>';
-        
-        /**
-         * Get the current reSt source for this Page/Post.
-         */
-        if ($post->ID) {
-            $rest_src = get_post_meta($post->ID, 'rest_src', true);
-        }
-        
-        /**
-         * Escape printf chars.
-         */
-        $rest_src = str_replace('%', '%%', $rest_src);
-        
+        $prefix = '<div id="rest-toolbar"></div>';
 
         /**
          * Either output a warning or the textarea for reSt source.
@@ -409,17 +410,28 @@ class ReStPlugin
             /**
              * Display a warning if rst2html.py is not set up.
              */
-            $suffix = '<div id="rest_no_convertor">';
-            $suffix .= '<p>No HTML convertor found! Please edit your <a href="';
-            $suffix .= admin_url('options-general.php?page=rest-plugin-settings');
-            $suffix .= '">reStructuredText Settings</a>.</p>';
-            $suffix .= '</div>';
+            $contents = '<p>No HTML convertor found! Please edit your <a href="';
+            $contents .= admin_url('options-general.php?page=rest-plugin-settings');
+            $contents .= '">reStructuredText Settings</a>.</p>';
             
         } else {
             /**
+             * Get the current reSt source for this Page/Post.
+             */
+            $rest_src = '';
+            if ($post->ID) {
+                $rest_src = get_post_meta($post->ID, 'rest_src', true);
+            }
+            
+            /**
+             * Escape printf chars.
+             */
+            $rest_src = str_replace('%', '%%', $rest_src);
+            
+            /**
              * Create a textarea to hold the reSt source.
              */
-            $suffix = sprintf(
+            $contents = sprintf(
                 '<textarea cols=40 rows=10>%s</textarea>',
                 htmlentities($rest_src)
             );
@@ -428,7 +440,7 @@ class ReStPlugin
         /**
          * Wrap the textarea or error message in a div.
          */
-        $suffix = '<div id="restsrc">' . $suffix . '</div>';
+        $suffix = '<div id="rest-container">' . $contents . '</div>';
         
         /**
          * Always add the prefix and suffix to the editor we're given.
@@ -591,9 +603,6 @@ class ReStPlugin
                 $rst2html .= ' --' . $opt . '=' . $val;
             }
         }
-        
-        error_reporting(E_ALL);
-        trigger_error('rst2html: ' . $rst2html);
 
         $desc = array(
             0 => array('pipe', 'r'),

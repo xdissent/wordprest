@@ -1,8 +1,62 @@
+jQuery.fn.extend({
+    insertAtCaret: function(insert) {
+        if (document.selection) {
+            alert('IE not supported yet.');
+            return;
+        }
+        
+        this.focus();
+        var orig = this.val();
+        var start = this[0].selectionStart;
+        this.val(orig.substring(0, start) + insert + orig.substring(start));
+        this[0].selectionStart = this[0].selectionEnd = start;
+    },
+    
+    wrapSelection: function(before, after) {
+        if (document.selection) {
+            alert('IE not supported yet.');
+            return;
+        }
+        
+        this.focus();
+        
+        if (this[0].selectionStart == undefined) {
+            return;
+        }
+        
+        if (after == undefined) {
+            after = before;
+        }
+        
+        var orig_start = this[0].selectionStart;
+        var orig_end = this[0].selectionEnd;
+        var orig = this.val();
+        var start = orig_start;
+        var end = orig_end;
+        
+        if (start == end) {
+        
+            // Grow selection to encapsulate entire word.
+            while (start > 0 && orig[start - 1].match(/\w/)) {
+                start--;
+            }
+            while (end < orig.length && orig[end].match(/\w/)) {
+                end++;
+            }
+        }
+            
+        this.val(orig.substring(0, start) + before + orig.substring(start, end) + after + orig.substring(end));
+        this[0].selectionStart = orig_start + before.length;
+        this[0].selectionEnd = orig_end + before.length;
+    }
+});
+
 jQuery(document).ready(function($){
 
     var rest_tab = $('#edButtonREST');
-    var rest_tags = $('#resttags');
-    var rest_src = $('#restsrc textarea');
+    var rest_toolbar = $('#rest-toolbar');
+    var rest_container = $('#rest-container');
+    var rest_src = $('#rest-container textarea');
     var other_tabs = $('#edButtonHTML, #edButtonPreview');
     var html_tab = $('#edButtonHTML');
     var tinymce_tab = $('#edButtonPreview');
@@ -81,15 +135,15 @@ jQuery(document).ready(function($){
             html_editor.hide();
             quick_tags.hide();
 
-            rest_src.parent().show();
-            rest_tags.show();
+            rest_container.show();
+            rest_toolbar.show();
             
         } else if (mode == 'html') {
         
             html_tab.addClass('active');
             
-            rest_src.parent().hide();
-            rest_tags.hide();
+            rest_container.hide();
+            rest_toolbar.hide();
 
             if (ed) {
                 ed.hide();
@@ -106,8 +160,8 @@ jQuery(document).ready(function($){
             html_editor.hide();
             quick_tags.hide();
 
-            rest_src.parent().hide();
-            rest_tags.hide();
+            rest_container.hide();
+            rest_toolbar.hide();
             
             edCloseAllTags();
             
@@ -177,11 +231,59 @@ jQuery(document).ready(function($){
         other_tabs.removeClass('active');
         html_editor.hide();
         editor_container.hide();
+        rest_toolbar.show();
+        rest_container.show();
     } else {
-        rest_tags.hide();
-        rest_src.parent().hide();
+        rest_toolbar.hide();
+        rest_container.hide();
     }
     
+    /**
+     * Set up the reSt toolbar.
+     */
+    var rest_tools = $('<div />').attr({ id: 'rest-tools' }).appendTo(rest_toolbar);
+    
+    var tool_factory = function(name, container, click) {
+        $('<input />').attr({
+            id: 'rest-tool-' + name,
+            type: 'button'
+        }).val(name).click(click).appendTo(container);
+    }
+    
+    
+    tool_factory('emphasis', rest_tools, function() {
+        rest_src.wrapSelection('*');
+    });
+    
+    tool_factory('strong', rest_tools, function() {
+        rest_src.wrapSelection('**');
+    });
+    
+    tool_factory('literal', rest_tools, function() {
+        rest_src.wrapSelection('``');
+    });
+    
+    // tool_factory('link', rest_tools, function() {});
+    
+    // tool_factory('image', rest_tools, function() {});
+    
+    tool_factory('more', rest_tools, function() {
+        rest_src.insertAtCaret("\n.. more\n");
+    });
+    
+
+        
+/*
+    var rest_controls = $('<div />').attr({ id: 'rest-controls' }).appendTo(rest_tools);
+
+    tool_factory('update HTML', rest_controls, function() {});    
+    var rest_auto_update = $('<input type="checkbox" /><label>auto-update</label>').appendTo(rest_controls);
+    
+*/
+    
+    /**
+     * Enable reSt parsing.
+     */
     if (rest_src.length) {
         rest_src.change(function() {
         
@@ -206,28 +308,8 @@ jQuery(document).ready(function($){
             
             update_rest();
         });
-    }
-    
-    var rest_tools = $('<div />').attr({ id: 'rest_tools' }).css({ float: 'left' }).appendTo(rest_tags);
-    
-    var tool_factory = function(name, container, click) {
-        $('<input />').attr({
-            id: 'rest_' + name,
-            type: 'button'
-        }).val(name).click(click).appendTo(container);
-    }
-    
-    tool_factory('emphasis', rest_tools, function() {});
-    tool_factory('strong', rest_tools, function() {});
-    tool_factory('literal', rest_tools, function() {});
-    tool_factory('link', rest_tools, function() {});
-    tool_factory('image', rest_tools, function() {});
-    tool_factory('more', rest_tools, function() {});
-        
-    var rest_controls = $('<div />').attr({ id: 'rest_tools' }).css({ float: 'right' }).appendTo(rest_tags);
 
-    tool_factory('load', rest_controls, function() {});    
-    var rest_auto_update = $('<input type="checkbox" /><label>auto-update</label>').appendTo(rest_controls);
-    
-    rest_tags.append($('<div />').css({ clear: 'both' }));
+    } else {
+        $('input' ,rest_toolbar).attr({ disabled: "disabled" });
+    }
 });
