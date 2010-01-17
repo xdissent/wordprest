@@ -289,7 +289,6 @@ jQuery(document).ready(function($){
     
     tool_factory('more', rest_tools, function() {
         rest_src.insertAtCaret("\n.. more\n");
-        console.log('more');
     });
     
 
