@@ -2,8 +2,6 @@
 WordPreSt reStructuredText Plugin For WordPress
 ===============================================
 
-.. contents::
-
 WordPreSt adds a reStructuredText input mode to the WordPress post/page 
 editor. Once installed, reStructuredText may be input directly into the
 editor and converted to HTML with the click of a mouse. The reSt source 
@@ -16,6 +14,10 @@ document source" link is also (optionally) available for each post.
 
 WordPreSt requires no template modifications and every effort has been 
 made to ensure a truly seamless integration into WordPress.
+
+.. more
+
+.. contents::
 
 
 Installation
